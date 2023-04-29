@@ -8,7 +8,6 @@ import androidx.core.view.ContentInfoCompat.Flags
 class LocationCheckService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-
         return START_STICKY
     }
 
