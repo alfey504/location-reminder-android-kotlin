@@ -18,6 +18,7 @@ class GeocoderHandler(context: Context) {
 
     private val mGeocoder = Geocoder(context)
 
+    // get address from a Location object
     suspend fun getAddressFromLocation(
         location: Location,
         onAddress: (address: Address?) -> Unit
@@ -31,7 +32,6 @@ class GeocoderHandler(context: Context) {
                 }
                 return@withContext
             }
-
             try {
                 val address = mGeocoder.getFromLocation(location.latitude, location.longitude, 1)?.firstOrNull()
                 CoroutineScope(Dispatchers.Main).launch {

@@ -6,10 +6,13 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationManager
+import android.os.Build
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationServices
 
 
@@ -34,7 +37,12 @@ class LocationHandler(private val context: Context) {
                     onPermissionGranted?.let {
                         it()
                     }
-                } else -> {
+                }
+                permissions.getOrDefault(Manifest.permission.ACCESS_BACKGROUND_LOCATION, false) -> {
+                    onPermissionGranted?.let {
+                        it()
+                    }
+                }else -> {
                     onPermissionDenied?.let {
                         it()
                     }
@@ -44,12 +52,21 @@ class LocationHandler(private val context: Context) {
     }
 
     fun requestForPermissions() {
-        locationPermissionRequest.launch(arrayOf(
-            Manifest.permission.ACCESS_FINE_LOCATION,
-            Manifest.permission.ACCESS_COARSE_LOCATION))
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            locationPermissionRequest.launch(arrayOf(
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION,
+                Manifest.permission.ACCESS_BACKGROUND_LOCATION
+            ))
+        }else{
+            locationPermissionRequest.launch(arrayOf(
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ))
+        }
     }
 
-    private fun checkPermission(): Boolean{
+    fun checkPermission(): Boolean{
         return ActivityCompat.checkSelfPermission(
             context,
             Manifest.permission.ACCESS_COARSE_LOCATION
@@ -68,9 +85,19 @@ class LocationHandler(private val context: Context) {
     }
 
     @SuppressLint("MissingPermission")
-    fun getLocation(onComplete: (location: Location)-> Unit){
+//    fun getLocation(onComplete: (location: Location) -> Unit){
+//        if(!checkPermission()) return
+//        fusedLocationProviderClient.lastLocation.addOnCompleteListener{ task->
+//            task.result?.let {
+//                onComplete(it)
+//            }
+//        }
+//    }
+
+    fun getLocation(onComplete: (location: Location) -> Unit){
         if(!checkPermission()) return
-        fusedLocationProviderClient.lastLocation.addOnCompleteListener{ task->
+        val locationFinder = fusedLocationProviderClient.getCurrentLocation(LocationRequest.PRIORITY_HIGH_ACCURACY, null)
+        locationFinder.addOnCompleteListener{ task->
             task.result?.let {
                 onComplete(it)
             }
@@ -83,6 +110,11 @@ class LocationHandler(private val context: Context) {
 
     fun setPermissionDenied(listener: () -> Unit){
         onPermissionGranted = listener
+    }
+
+    fun isWithinRange(location1: Location, location2: Location): Boolean{
+        val distance = location1.distanceTo(location2)
+        return distance < 350
     }
 
 
